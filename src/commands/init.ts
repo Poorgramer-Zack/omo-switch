@@ -2,13 +2,15 @@ import { Command } from "commander";
 import chalk from "chalk";
 import ora from "ora";
 import * as path from "path";
-import { StoreManager } from "../store";
+import { StoreManager, SettingsManager, OmosConfigManager } from "../store";
 import { STORE_VERSION } from "../store/types";
 import { downloadFile, readBundledAsset } from "../utils/downloader";
 import { findExistingConfigPath, getConfigTargetDir, ensureConfigDir } from "../utils/config-path";
+import { getOmosConfigTargetPath } from "../utils/omos-config-path";
 import * as fs from "fs";
 
 const SCHEMA_URL = "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json";
+const SLIM_SCHEMA_URL = "https://raw.githubusercontent.com/Poorgramer-Zack/omo-switch/main/shared/assets/oh-my-opencode-slim.schema.json";
 
 export const initCommand = new Command("init")
   .description("Initialize omo-switch store with default profile")
@@ -17,6 +19,8 @@ export const initCommand = new Command("init")
 
     try {
       const store = new StoreManager();
+      const settings = new SettingsManager();
+      const activeType = settings.getEffectiveType();
 
       spinner.text = "Creating directory structure...";
       store.ensureDirectories();
@@ -53,7 +57,61 @@ export const initCommand = new Command("init")
         }
       }
 
+      if (activeType === "slim") {
+        spinner.text = "Downloading slim schema...";
+        const slimSchemaCachePath = path.join(store.getCacheSchemaPath(), "oh-my-opencode-slim.schema.json");
+
+        try {
+          await downloadFile(
+            SLIM_SCHEMA_URL,
+            store.getCacheSchemaPath(),
+            "oh-my-opencode-slim.schema.json",
+            { source: "github" }
+          );
+          spinner.succeed("Slim schema downloaded from GitHub");
+        } catch (err) {
+          if (fs.existsSync(slimSchemaCachePath)) {
+            spinner.warn(`Failed to download slim schema from GitHub: ${err instanceof Error ? err.message : "Unknown error"}`);
+            spinner.text = "Using cached slim schema...";
+            spinner.succeed("Using cached slim schema");
+          } else {
+            spinner.warn(`Failed to download slim schema from GitHub: ${err instanceof Error ? err.message : "Unknown error"}`);
+            spinner.text = "Falling back to bundled slim schema...";
+            const bundledSchema = readBundledAsset("oh-my-opencode-slim.schema.json");
+            if (bundledSchema) {
+              store.saveCacheFile(store.getCacheSchemaPath(), "oh-my-opencode-slim.schema.json", bundledSchema, { source: "bundled" });
+              spinner.succeed("Using bundled slim schema");
+            } else {
+              spinner.fail("No bundled slim schema available");
+              throw new Error("Failed to download or find bundled slim schema");
+            }
+          }
+        }
+      }
+
       spinner.text = "Creating default profile...";
+
+      if (activeType === "slim") {
+        const omosManager = new OmosConfigManager("user");
+
+        if (omosManager.configExists()) {
+          spinner.info(`Using existing config: ${omosManager.getTargetPath()}`);
+          spinner.text = "Skipping default profile creation...";
+        } else {
+          const defaultTemplate = readBundledAsset("default-template-slim.json");
+          if (!defaultTemplate) {
+            spinner.fail("Default slim template not found");
+            throw new Error("Default slim template not found in shared assets");
+          }
+
+          const defaultConfig = JSON.parse(defaultTemplate) as Record<string, unknown>;
+          omosManager.saveConfig(defaultConfig);
+          spinner.succeed(`Default slim config written to ${chalk.cyan(getOmosConfigTargetPath().path)}`);
+        }
+
+        spinner.succeed(`omo-switch initialized at ${chalk.cyan(store.getStorePath())}`);
+        return;
+      }
       
       // Check if user config already exists (jsonc or json)
       const existingConfig = findExistingConfigPath();

@@ -55,6 +55,18 @@ vi.mock("../utils/validator", () => {
   };
 });
 
+// Mock OmosValidator for slim mode tests
+vi.mock("../utils/omos-validator", () => {
+  const mockValidatePreset = vi.fn(() => ({ valid: true, errors: [] }));
+  return {
+    OmosValidator: class {
+      validatePreset = mockValidatePreset;
+      constructor(_schemaPath: string) {}
+    },
+    __mockValidatePreset: mockValidatePreset,
+  };
+});
+
 vi.mock("../utils/scope-resolver", async () => {
   const actual = await vi.importActual<typeof import("../utils/scope-resolver")>("../utils/scope-resolver");
   return {
@@ -140,6 +152,9 @@ vi.mock("../store", () => {
         }
         createBackup() {
           return null;
+        }
+        getTargetPath() {
+          return "/config/opencode/oh-my-opencode-slim.json";
         }
       },
     __createdStoreInstances,
@@ -475,5 +490,122 @@ describe("addCommand", () => {
 
     expect(mockSpinner.fail).toHaveBeenCalled();
     expect(chalk.red).toHaveBeenCalled();
+  });
+
+  // --- Slim mode tests ---
+
+  it("adds preset in slim mode", async () => {
+    const storeModule = await import("../store");
+    vi.spyOn(storeModule.SettingsManager.prototype, "getEffectiveType").mockReturnValue("slim");
+    vi.spyOn(storeModule.OmosConfigManager.prototype, "addPreset").mockImplementation(() => {});
+    vi.spyOn(storeModule.OmosConfigManager.prototype, "createBackup").mockReturnValue(null);
+    vi.spyOn(storeModule.OmosConfigManager.prototype, "getPreset").mockReturnValue(null);
+    vi.spyOn(storeModule.OmosConfigManager.prototype, "getTargetPath").mockReturnValue("/config/opencode/oh-my-opencode-slim.json");
+    vi.mocked(fs.existsSync).mockImplementation((p: any) => {
+      const s = path.normalize(String(p || ""));
+      const base = path.basename(s).toLowerCase();
+      if (base === "preset.json") return true;
+      return false;
+    });
+    vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ orchestrator: { model: "test/model" } }));
+    vi.mocked(select).mockResolvedValue("user" as any);
+
+    await runAdd("/path/to/preset.json", { scope: "user" });
+
+    expect(storeModule.OmosConfigManager.prototype.addPreset).toHaveBeenCalled();
+    expect(mockSpinner.succeed).toHaveBeenCalledWith(expect.stringContaining("Added preset"));
+  });
+
+  it("downloads slim schema from remote in slim mode", async () => {
+    const storeModule = await import("../store");
+    vi.spyOn(storeModule.SettingsManager.prototype, "getEffectiveType").mockReturnValue("slim");
+    vi.spyOn(storeModule.OmosConfigManager.prototype, "addPreset").mockImplementation(() => {});
+    vi.spyOn(storeModule.OmosConfigManager.prototype, "createBackup").mockReturnValue(null);
+    vi.spyOn(storeModule.OmosConfigManager.prototype, "getPreset").mockReturnValue(null);
+    vi.spyOn(storeModule.OmosConfigManager.prototype, "getTargetPath").mockReturnValue("/config/opencode/oh-my-opencode-slim.json");
+    vi.mocked(fs.existsSync).mockImplementation((p: any) => {
+      const s = path.normalize(String(p || ""));
+      const base = path.basename(s).toLowerCase();
+      if (base === "preset.json") return true;
+      return false;
+    });
+    vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ orchestrator: { model: "test/model" } }));
+    vi.mocked(select).mockResolvedValue("user" as any);
+
+    await runAdd("/path/to/preset.json", { scope: "user" });
+
+    expect(downloadFile).toHaveBeenCalledWith(
+      expect.stringContaining("oh-my-opencode-slim.schema.json"),
+      "/cache/schema",
+      "oh-my-opencode-slim.schema.json",
+      { source: "github" }
+    );
+  });
+
+  it("uses bundled slim schema when download fails in slim mode", async () => {
+    const storeModule = await import("../store");
+    vi.spyOn(storeModule.SettingsManager.prototype, "getEffectiveType").mockReturnValue("slim");
+    vi.spyOn(storeModule.OmosConfigManager.prototype, "addPreset").mockImplementation(() => {});
+    vi.spyOn(storeModule.OmosConfigManager.prototype, "createBackup").mockReturnValue(null);
+    vi.spyOn(storeModule.OmosConfigManager.prototype, "getPreset").mockReturnValue(null);
+    vi.spyOn(storeModule.OmosConfigManager.prototype, "getTargetPath").mockReturnValue("/config/opencode/oh-my-opencode-slim.json");
+    vi.mocked(downloadFile).mockImplementation(async (_url: string, _dir: string, fileName: string) => {
+      if (fileName === "oh-my-opencode-slim.schema.json") {
+        throw new Error("Network error");
+      }
+      return true;
+    });
+    vi.mocked(readBundledAsset).mockImplementation((name: string) => {
+      if (name === "oh-my-opencode-slim.schema.json") return '{"$schema":"test-slim"}';
+      if (name === "oh-my-opencode.schema.json") return '{"$schema":"test"}';
+      return null;
+    });
+    vi.mocked(fs.existsSync).mockImplementation((p: any) => {
+      const s = path.normalize(String(p || ""));
+      const base = path.basename(s).toLowerCase();
+      if (base === "preset.json") return true;
+      return false;
+    });
+    vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ orchestrator: { model: "test/model" } }));
+    vi.mocked(select).mockResolvedValue("user" as any);
+
+    await runAdd("/path/to/preset.json", { scope: "user" });
+
+    expect(readBundledAsset).toHaveBeenCalledWith("oh-my-opencode-slim.schema.json");
+    expect(mockSpinner.succeed).toHaveBeenCalled();
+  });
+
+  it("rejects .jsonc files in slim mode", async () => {
+    const storeModule = await import("../store");
+    vi.spyOn(storeModule.SettingsManager.prototype, "getEffectiveType").mockReturnValue("slim");
+    vi.mocked(fs.existsSync).mockImplementation((p: any) => {
+      const s = path.normalize(String(p || ""));
+      const base = path.basename(s).toLowerCase();
+      if (base === "preset.jsonc") return true;
+      return false;
+    });
+
+    await runAdd("/path/to/preset.jsonc", { scope: "user" });
+
+    expect(mockSpinner.fail).toHaveBeenCalledWith(expect.stringContaining("Invalid file extension"));
+  });
+
+  it("exits when slim preset exists without --force", async () => {
+    const storeModule = await import("../store");
+    vi.spyOn(storeModule.SettingsManager.prototype, "getEffectiveType").mockReturnValue("slim");
+    vi.spyOn(storeModule.OmosConfigManager.prototype, "getPreset").mockReturnValue({ orchestrator: { model: "test/model" } });
+    vi.spyOn(storeModule.OmosConfigManager.prototype, "getTargetPath").mockReturnValue("/config/opencode/oh-my-opencode-slim.json");
+    vi.mocked(fs.existsSync).mockImplementation((p: any) => {
+      const s = path.normalize(String(p || ""));
+      const base = path.basename(s).toLowerCase();
+      if (base === "preset.json") return true;
+      return false;
+    });
+    vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ orchestrator: { model: "test/model" } }));
+    vi.mocked(select).mockResolvedValue("user" as any);
+
+    await runAdd("/path/to/preset.json", { scope: "user", id: "my-preset" });
+
+    expect(mockSpinner.fail).toHaveBeenCalledWith(expect.stringContaining("already exists"));
   });
 });

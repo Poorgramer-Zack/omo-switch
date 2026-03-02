@@ -33,6 +33,15 @@ vi.mock("../store", async () => {
   const actual = await vi.importActual<typeof import("../store")>("../store");
   return {
     ...actual,
+    SettingsManager: class {
+      getEffectiveType() { return "omo"; }
+      loadSettings() { return { activeType: "omo" }; }
+    },
+    OmosConfigManager: class {
+      configExists() { return false; }
+      saveConfig() {}
+      getTargetPath() { return "/config/opencode/oh-my-opencode-slim.json"; }
+    },
   };
 });
 
@@ -47,10 +56,14 @@ vi.mock("../utils/config-path", () => ({
   ensureConfigDir: vi.fn(),
 }));
 
+vi.mock("../utils/omos-config-path", () => ({
+  getOmosConfigTargetPath: vi.fn(() => ({ path: "/config/opencode/oh-my-opencode-slim.json", isPreferred: true })),
+}));
+
 import * as fs from "fs";
 import ora from "ora";
 import chalk from "chalk";
-import { StoreManager } from "../store";
+import { StoreManager, SettingsManager, OmosConfigManager } from "../store";
 import { downloadFile, readBundledAsset } from "../utils/downloader";
 import { findExistingConfigPath, getConfigTargetDir } from "../utils/config-path";
 
@@ -59,7 +72,7 @@ describe("initCommand", () => {
   let mockSpinner: any;
 
   beforeEach(async () => {
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
     mockProcessExit();
 
     vi.spyOn(StoreManager.prototype, "ensureDirectories");
@@ -189,5 +202,82 @@ describe("initCommand", () => {
     await runInit();
 
     expect(mockSpinner.fail).toHaveBeenCalledWith(expect.stringContaining("No bundled schema"));
+  });
+
+  // --- Slim mode tests ---
+
+  it("initializes slim mode when activeType is slim", async () => {
+    vi.spyOn(SettingsManager.prototype, "getEffectiveType").mockReturnValue("slim");
+    vi.mocked(readBundledAsset).mockImplementation((name: string) => {
+      if (name === "default-template-slim.json") {
+        return JSON.stringify({ preset: "zen-free", presets: { "zen-free": { orchestrator: { model: "test/model" } } } });
+      }
+      if (name === "oh-my-opencode.schema.json") {
+        return '{"$schema":"test"}';
+      }
+      return null;
+    });
+
+    await runInit();
+
+    expect(downloadFile).toHaveBeenCalledWith(
+      expect.stringContaining("oh-my-opencode-slim.schema.json"),
+      "/cache/schema",
+      "oh-my-opencode-slim.schema.json",
+      { source: "github" }
+    );
+    expect(mockSpinner.succeed).toHaveBeenCalled();
+  });
+
+  it("uses bundled slim schema when GitHub download fails in slim mode", async () => {
+    vi.spyOn(SettingsManager.prototype, "getEffectiveType").mockReturnValue("slim");
+    vi.mocked(downloadFile).mockImplementation(async (_url: string, _dir: string, fileName: string) => {
+      if (fileName === "oh-my-opencode-slim.schema.json") {
+        throw new Error("Network error");
+      }
+      return true;
+    });
+    vi.mocked(readBundledAsset).mockImplementation((name: string) => {
+      if (name === "default-template-slim.json") {
+        return JSON.stringify({ preset: "zen-free", presets: {} });
+      }
+      if (name === "oh-my-opencode-slim.schema.json") {
+        return '{"$schema":"test-slim"}';
+      }
+      if (name === "oh-my-opencode.schema.json") {
+        return '{"$schema":"test"}';
+      }
+      return null;
+    });
+
+    await runInit();
+
+    expect(mockSpinner.warn).toHaveBeenCalled();
+    expect(mockSpinner.succeed).toHaveBeenCalled();
+  });
+
+  it("skips slim profile creation when config already exists", async () => {
+    vi.spyOn(SettingsManager.prototype, "getEffectiveType").mockReturnValue("slim");
+    vi.spyOn(OmosConfigManager.prototype, "configExists").mockReturnValue(true);
+    vi.spyOn(OmosConfigManager.prototype, "getTargetPath").mockReturnValue("/config/opencode/oh-my-opencode-slim.json");
+
+    await runInit();
+
+    expect(mockSpinner.info).toHaveBeenCalledWith(expect.stringContaining("Using existing config"));
+    expect(mockSpinner.succeed).toHaveBeenCalled();
+  });
+
+  it("fails when no slim template is available", async () => {
+    vi.spyOn(SettingsManager.prototype, "getEffectiveType").mockReturnValue("slim");
+    vi.mocked(readBundledAsset).mockImplementation((name: string) => {
+      if (name === "oh-my-opencode.schema.json") {
+        return '{"$schema":"test"}';
+      }
+      return null;
+    });
+
+    await runInit();
+
+    expect(mockSpinner.fail).toHaveBeenCalledWith(expect.stringContaining("Default slim template not found"));
   });
 });
