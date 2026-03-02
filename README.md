@@ -77,7 +77,7 @@ omo-switch init
 
 **What it does:**
 - Creates the store directory structure
-- Downloads the latest `oh-my-opencode` schema from GitHub (falls back to bundled if offline)
+ Downloads the latest configuration schema (OMO and/or SLIM based on current mode) from GitHub (falls back to bundled if offline)
 - Creates a default profile if no existing config is detected
 
 ---
@@ -275,7 +275,7 @@ OMOS behavior:
 
 ### `schema refresh`
 
-Refreshes the cached `oh-my-opencode` JSON schema.
+Refreshes the cached JSON schema (OMO or SLIM based on current mode).
 
 ```bash
 # Download latest schema from GitHub

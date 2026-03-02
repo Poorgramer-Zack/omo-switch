@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-01-23
+**Generated:** 2026-03-02
 **Project:** omo-switch - Profile manager for oh-my-opencode
 
 ## OVERVIEW
@@ -146,6 +146,7 @@ Run single test: `npx vitest run src/commands/add.test.ts`
 ## NOTES
 
 - CLI targets Windows primary, XDG paths for Linux/macOS
-- Schema URL: `https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json`
-- Bundled schema fallback in `shared/assets/oh-my-opencode.schema.json`
+ Schema URL: `https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json`
+ Slim Schema URL: `https://raw.githubusercontent.com/Poorgramer-Zack/omo-switch/main/shared/assets/oh-my-opencode-slim.schema.json`
+ Bundled schema fallback in `shared/assets/oh-my-opencode.schema.json` and `oh-my-opencode-slim.schema.json`
 - No ESLint/Prettier configured - follow existing conventions
