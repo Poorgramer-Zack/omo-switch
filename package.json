@@ -29,12 +29,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Aykahshi/omo-switch.git"
+    "url": "git+https://github.com/Poorgramer-Zack/omo-switch.git"
   },
   "bugs": {
-    "url": "https://github.com/Aykahshi/omo-switch/issues"
+    "url": "https://github.com/Poorgramer-Zack/omo-switch/issues"
   },
-  "homepage": "https://github.com/Aykahshi/omo-switch#readme",
+  "homepage": "https://github.com/Poorgramer-Zack/omo-switch#readme",
   "dependencies": {
     "@inquirer/prompts": "^7.0.0",
     "ajv": "^8.17.1",
