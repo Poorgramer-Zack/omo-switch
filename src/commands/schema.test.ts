@@ -3,6 +3,7 @@ import { mockProcessExit } from "../test-setup";
 
 vi.mock("fs", () => ({
   existsSync: vi.fn(),
+  readFileSync: vi.fn(),
   writeFileSync: vi.fn(),
   mkdirSync: vi.fn(),
 }));
@@ -33,18 +34,21 @@ vi.mock("../store", async () => {
     ...actual,
   };
 });
-
 vi.mock("../utils/downloader", () => ({
   downloadFile: vi.fn(),
   readBundledAsset: vi.fn(),
 }));
 
+vi.mock("../utils/scope-resolver", () => ({
+  findProjectRoot: vi.fn(),
+}));
+import { downloadFile, readBundledAsset } from "../utils/downloader";
+import { findProjectRoot } from "../utils/scope-resolver";
 import * as fs from "fs";
 import ora from "ora";
 import chalk from "chalk";
 import { StoreManager } from "../store";
 import { downloadFile, readBundledAsset } from "../utils/downloader";
-
 describe("schemaCommand", () => {
   let store: StoreManager;
   let mockSpinner: any;
@@ -57,6 +61,8 @@ describe("schemaCommand", () => {
 
     // Dynamic import to ensure fresh module state
     const mod = await import("./schema");
+    vi.mocked(fs.readFileSync).mockReturnValue("{}");
+    vi.mocked(findProjectRoot).mockReturnValue(null);
     schemaCommand = mod.schemaCommand;
 
     mockSpinner = vi.mocked(ora)();
@@ -64,7 +70,12 @@ describe("schemaCommand", () => {
     vi.spyOn(StoreManager.prototype, "ensureDirectories");
     vi.spyOn(StoreManager.prototype, "getCacheSchemaPath").mockReturnValue("/cache/schema");
     vi.spyOn(StoreManager.prototype, "saveCacheFile");
-
+    vi.mocked(fs.existsSync).mockImplementation((p: any) => {
+      const s = String(p || "");
+      if (s.includes("oh-my-opencode.schema.json")) return false;
+      if (s.includes("oh-my-opencode-slim.schema.json")) return false;
+      return false;
+    });
     vi.mocked(downloadFile).mockResolvedValue(true);
     vi.mocked(readBundledAsset).mockImplementation((name: string) => {
       if (name === "oh-my-opencode.schema.json") {
@@ -90,7 +101,11 @@ describe("schemaCommand", () => {
     // Call the internal action handler
     await refreshCmd._actionHandler(refreshCmd.processedArgs);
   }
-
+    vi.mocked(fs.existsSync).mockImplementation((p: any) => {
+      const s = String(p || "");
+      if (s.includes("oh-my-opencode.schema.json")) return true;
+      return false;
+    });
   it("refreshes schema from GitHub", async () => {
     await runSchemaRefresh({ offline: false });
 
@@ -137,7 +152,11 @@ describe("schemaCommand", () => {
 
   it("fails on network error in online mode", async () => {
     vi.mocked(downloadFile).mockRejectedValue(new Error("Network error"));
-
+    vi.mocked(fs.existsSync).mockImplementation((p: any) => {
+      const s = String(p || "");
+      if (s.includes("oh-my-opencode.schema.json")) return true;
+      return false;
+    });
     try {
       await runSchemaRefresh({ offline: false });
     } catch (e: any) {
