@@ -1,0 +1,237 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/alvinunreal/oh-my-opencode-slim/config-schema",
+  "title": "oh-my-opencode-slim Plugin Configuration",
+  "description": "Configuration schema for the oh-my-opencode-slim PluginConfig.",
+  "type": "object",
+  "properties": {
+    "preset": {
+      "type": "string"
+    },
+    "presets": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/presetConfig"
+      }
+    },
+    "scoringEngineVersion": {
+      "type": "string",
+      "enum": ["v1", "v2-shadow", "v2"]
+    },
+    "balanceProviderUsage": {
+      "type": "boolean"
+    },
+    "manualPlan": {
+      "$ref": "#/definitions/manualPlan"
+    },
+    "agents": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/agentConfig"
+      }
+    },
+    "disabled_mcps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tmux": {
+      "$ref": "#/definitions/tmuxConfig"
+    },
+    "background": {
+      "$ref": "#/definitions/backgroundTaskConfig"
+    },
+    "fallback": {
+      "$ref": "#/definitions/failoverConfig"
+    }
+  },
+  "definitions": {
+    "providerModelId": {
+      "type": "string",
+      "pattern": "^[^/\\s]+/[^\\s]+$"
+    },
+    "manualAgentPlan": {
+      "type": "object",
+      "properties": {
+        "primary": {
+          "$ref": "#/definitions/providerModelId"
+        },
+        "fallback1": {
+          "$ref": "#/definitions/providerModelId"
+        },
+        "fallback2": {
+          "$ref": "#/definitions/providerModelId"
+        },
+        "fallback3": {
+          "$ref": "#/definitions/providerModelId"
+        }
+      },
+      "required": ["primary", "fallback1", "fallback2", "fallback3"]
+    },
+    "manualPlan": {
+      "type": "object",
+      "properties": {
+        "orchestrator": {
+          "$ref": "#/definitions/manualAgentPlan"
+        },
+        "oracle": {
+          "$ref": "#/definitions/manualAgentPlan"
+        },
+        "designer": {
+          "$ref": "#/definitions/manualAgentPlan"
+        },
+        "explorer": {
+          "$ref": "#/definitions/manualAgentPlan"
+        },
+        "librarian": {
+          "$ref": "#/definitions/manualAgentPlan"
+        },
+        "fixer": {
+          "$ref": "#/definitions/manualAgentPlan"
+        }
+      },
+      "required": [
+        "orchestrator",
+        "oracle",
+        "designer",
+        "explorer",
+        "librarian",
+        "fixer"
+      ],
+      "additionalProperties": false
+    },
+
+    "agentConfig": {
+      "type": "object",
+      "description": "AgentOverrideConfigSchema (record value for presets/agents).",
+      "properties": {
+        "model": {
+          "type": "string"
+        },
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "variant": {
+          "type": "string"
+        },
+        "skills": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mcps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+
+    "presetConfig": {
+      "type": "object",
+      "description": "PresetSchema: record of string -> agentConfig.",
+      "additionalProperties": {
+        "$ref": "#/definitions/agentConfig"
+      }
+    },
+
+    "backgroundTaskConfig": {
+      "type": "object",
+      "properties": {
+        "maxConcurrentStarts": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 50,
+          "default": 10
+        }
+      }
+    },
+
+    "tmuxLayout": {
+      "type": "string",
+      "enum": [
+        "main-horizontal",
+        "main-vertical",
+        "tiled",
+        "even-horizontal",
+        "even-vertical"
+      ]
+    },
+    "tmuxConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "layout": {
+          "$ref": "#/definitions/tmuxLayout",
+          "default": "main-vertical"
+        },
+        "main_pane_size": {
+          "type": "number",
+          "minimum": 20,
+          "maximum": 80,
+          "default": 60
+        }
+      }
+    },
+
+    "agentModelChain": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "fallbackChains": {
+      "type": "object",
+      "properties": {
+        "orchestrator": {
+          "$ref": "#/definitions/agentModelChain"
+        },
+        "oracle": {
+          "$ref": "#/definitions/agentModelChain"
+        },
+        "designer": {
+          "$ref": "#/definitions/agentModelChain"
+        },
+        "explorer": {
+          "$ref": "#/definitions/agentModelChain"
+        },
+        "librarian": {
+          "$ref": "#/definitions/agentModelChain"
+        },
+        "fixer": {
+          "$ref": "#/definitions/agentModelChain"
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/agentModelChain"
+      }
+    },
+    "failoverConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "timeoutMs": {
+          "type": "number",
+          "minimum": 0,
+          "default": 15000
+        },
+        "chains": {
+          "$ref": "#/definitions/fallbackChains",
+          "default": {}
+        }
+      }
+    }
+  }
+}

@@ -35,7 +35,7 @@ export async function downloadFile(url: string, cacheDir: string, fileName: stri
 }
 
 export function readBundledAsset(relativePath: string): string | null {
-  const projectRoot = path.resolve(__dirname, "../../../");
+  const projectRoot = path.resolve(__dirname, "../../");
   const assetPath = path.join(projectRoot, "shared", "assets", relativePath);
   if (!fs.existsSync(assetPath)) {
     return null;

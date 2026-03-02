@@ -5,13 +5,11 @@ import * as fs from "fs";
 import * as path from "path";
 import JSON5 from "json5";
 import { select } from "@inquirer/prompts";
-import { StoreManager, ProjectStoreManager, Scope, Profile, OmosConfigManager, SettingsManager, OmosPresetConfig } from "../store";
+import { StoreManager, ProjectStoreManager, Scope, Profile, OmosConfigManager, SettingsManager, OmosPresetConfig, OmosConfig } from "../store";
 import { Validator } from "../utils/validator";
 import { OmosValidator } from "../utils/omos-validator";
-import { downloadFile, readBundledAsset } from "../utils/downloader";
+import { readBundledAsset } from "../utils/downloader";
 import { resolveProjectRoot, findProjectRoot } from "../utils/scope-resolver";
-
-const OMO_SCHEMA_URL = "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json";
 
 async function ensureOmoSchemaAvailable(store: StoreManager): Promise<string> {
   const schemaPath = path.join(store.getCacheSchemaPath(), "oh-my-opencode.schema.json");
@@ -20,22 +18,16 @@ async function ensureOmoSchemaAvailable(store: StoreManager): Promise<string> {
     return schemaPath;
   }
 
-  try {
-    await downloadFile(
-      OMO_SCHEMA_URL,
-      store.getCacheSchemaPath(),
-      "oh-my-opencode.schema.json",
-      { source: "github" }
-    );
+  // Schema not in cache - try bundled fallback
+  const bundledSchema = readBundledAsset("oh-my-opencode.schema.json");
+  if (bundledSchema) {
+    store.saveCacheFile(store.getCacheSchemaPath(), "oh-my-opencode.schema.json", bundledSchema, { source: "bundled" });
     return schemaPath;
-  } catch {
-    const bundledSchema = readBundledAsset("oh-my-opencode.schema.json");
-    if (bundledSchema) {
-      store.saveCacheFile(store.getCacheSchemaPath(), "oh-my-opencode.schema.json", bundledSchema, { source: "bundled" });
-      return schemaPath;
-    }
-    throw new Error("Failed to download or find bundled schema");
   }
+
+  throw new Error(
+    "Schema not found in cache. Run 'omo-switch init' or 'omo-switch schema refresh' to download the schema first."
+  );
 }
 
 async function ensureOmosSchemaAvailable(store: StoreManager): Promise<string> {
@@ -45,14 +37,16 @@ async function ensureOmosSchemaAvailable(store: StoreManager): Promise<string> {
     return schemaPath;
   }
 
-  // For OMOS, we use the bundled schema directly (no remote URL currently)
+  // Schema not in cache - try bundled fallback
   const bundledSchema = readBundledAsset("oh-my-opencode-slim.schema.json");
   if (bundledSchema) {
     store.saveCacheFile(store.getCacheSchemaPath(), "oh-my-opencode-slim.schema.json", bundledSchema, { source: "bundled" });
     return schemaPath;
   }
 
-  throw new Error("OMOS schema not found in bundled assets");
+  throw new Error(
+    "Slim schema not found in cache. Run 'omo-switch init' or 'omo-switch schema refresh' to download the schema first."
+  );
 }
 
 function deriveIdFromName(name: string): string {
@@ -110,7 +104,7 @@ async function handleOmosAdd(
   spinner.text = "Validating preset configuration...";
   const schemaPath = await ensureOmosSchemaAvailable(globalStore);
   const validator = new OmosValidator(schemaPath);
-  const validation = validator.validatePreset(presetConfig);
+  const validation = validator.validate(presetConfig as OmosConfig);
 
   if (!validation.valid) {
     spinner.fail("Preset validation failed");
