@@ -15,7 +15,7 @@ const program = new Command();
 program
   .name("omo-switch")
   .description("CLI tool for managing oh-my-opencode profiles")
-  .version("0.2.1");
+  .version("0.2.2");
 
 program.addCommand(initCommand);
 program.addCommand(listCommand);
