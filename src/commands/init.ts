@@ -1,9 +1,8 @@
 import { Command } from "commander";
 import chalk from "chalk";
-import ora from "ora";
+import ora, { type Ora } from "ora";
 import * as path from "path";
 import { StoreManager, SettingsManager, OmosConfigManager } from "../store";
-import { STORE_VERSION } from "../store/types";
 import { downloadFile, readBundledAsset } from "../utils/downloader";
 import { findExistingConfigPath, getConfigTargetDir, ensureConfigDir } from "../utils/config-path";
 import { getOmosConfigTargetPath } from "../utils/omos-config-path";
@@ -11,6 +10,40 @@ import * as fs from "fs";
 
 const SCHEMA_URL = "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json";
 const SLIM_SCHEMA_URL = "https://raw.githubusercontent.com/Poorgramer-Zack/omo-switch/main/shared/assets/oh-my-opencode-slim.schema.json";
+
+async function ensureSchema(
+  store: StoreManager,
+  spinner: Ora,
+  url: string,
+  filename: string,
+  label: string,
+): Promise<void> {
+  const cachePath = path.join(store.getCacheSchemaPath(), filename);
+
+  try {
+    await downloadFile(url, store.getCacheSchemaPath(), filename, { source: "github" });
+    spinner.succeed(`${label} downloaded from GitHub`);
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : "Unknown error";
+
+    if (fs.existsSync(cachePath)) {
+      spinner.warn(`Failed to download ${label.toLowerCase()} from GitHub: ${errMsg}`);
+      spinner.text = `Using cached ${label.toLowerCase()}...`;
+      spinner.succeed(`Using cached ${label.toLowerCase()}`);
+    } else {
+      spinner.warn(`Failed to download ${label.toLowerCase()} from GitHub: ${errMsg}`);
+      spinner.text = `Falling back to bundled ${label.toLowerCase()}...`;
+      const bundledSchema = readBundledAsset(filename);
+      if (bundledSchema) {
+        store.saveCacheFile(store.getCacheSchemaPath(), filename, bundledSchema, { source: "bundled" });
+        spinner.succeed(`Using bundled ${label.toLowerCase()}`);
+      } else {
+        spinner.fail(`No bundled ${label.toLowerCase()} available`);
+        throw new Error(`Failed to download or find bundled ${label.toLowerCase()}`);
+      }
+    }
+  }
+}
 
 export const initCommand = new Command("init")
   .description("Initialize omo-switch store with default profile")
@@ -26,67 +59,11 @@ export const initCommand = new Command("init")
       store.ensureDirectories();
 
       spinner.text = "Downloading schema...";
-      const schemaCachePath = path.join(store.getCacheSchemaPath(), "oh-my-opencode.schema.json");
-      
-      try {
-        await downloadFile(
-          SCHEMA_URL,
-          store.getCacheSchemaPath(),
-          "oh-my-opencode.schema.json",
-          { source: "github" }
-        );
-        spinner.succeed("Schema downloaded from GitHub");
-      } catch (err) {
-        const metaPath = path.join(store.getCacheSchemaPath(), "meta.json");
-        
-        if (fs.existsSync(schemaCachePath)) {
-          spinner.warn(`Failed to download schema from GitHub: ${err instanceof Error ? err.message : "Unknown error"}`);
-          spinner.text = "Using cached schema...";
-          spinner.succeed("Using cached schema");
-        } else {
-          spinner.warn(`Failed to download schema from GitHub: ${err instanceof Error ? err.message : "Unknown error"}`);
-          spinner.text = "Falling back to bundled schema...";
-          const bundledSchema = readBundledAsset("oh-my-opencode.schema.json");
-          if (bundledSchema) {
-            store.saveCacheFile(store.getCacheSchemaPath(), "oh-my-opencode.schema.json", bundledSchema, { source: "bundled" });
-            spinner.succeed("Using bundled schema");
-          } else {
-            spinner.fail("No bundled schema available");
-            throw new Error("Failed to download or find bundled schema");
-          }
-        }
-      }
+      await ensureSchema(store, spinner, SCHEMA_URL, "oh-my-opencode.schema.json", "Schema");
 
       if (activeType === "slim") {
         spinner.text = "Downloading slim schema...";
-        const slimSchemaCachePath = path.join(store.getCacheSchemaPath(), "oh-my-opencode-slim.schema.json");
-
-        try {
-          await downloadFile(
-            SLIM_SCHEMA_URL,
-            store.getCacheSchemaPath(),
-            "oh-my-opencode-slim.schema.json",
-            { source: "github" }
-          );
-          spinner.succeed("Slim schema downloaded from GitHub");
-        } catch (err) {
-          if (fs.existsSync(slimSchemaCachePath)) {
-            spinner.warn(`Failed to download slim schema from GitHub: ${err instanceof Error ? err.message : "Unknown error"}`);
-            spinner.text = "Using cached slim schema...";
-            spinner.succeed("Using cached slim schema");
-          } else {
-            spinner.warn(`Failed to download slim schema from GitHub: ${err instanceof Error ? err.message : "Unknown error"}`);
-            spinner.text = "Falling back to bundled slim schema...";
-            const bundledSchema = readBundledAsset("oh-my-opencode-slim.schema.json");
-            if (bundledSchema) {
-              store.saveCacheFile(store.getCacheSchemaPath(), "oh-my-opencode-slim.schema.json", bundledSchema, { source: "bundled" });
-              spinner.succeed("Using bundled slim schema");
-            } else {
-              spinner.fail("No bundled slim schema available");
-              throw new Error("Failed to download or find bundled slim schema");
-            }
-          }
-        }
+        await ensureSchema(store, spinner, SLIM_SCHEMA_URL, "oh-my-opencode-slim.schema.json", "Slim schema");
       }
 
       spinner.text = "Creating default profile...";

@@ -231,6 +231,9 @@ describe("addCommand", () => {
       if (name === "oh-my-opencode.schema.json") {
         return '{"$schema":"test"}';
       }
+      if (name === "oh-my-opencode-slim.schema.json") {
+        return '{"$schema":"test-slim"}';
+      }
       return null;
     });
     // fs exists/read behavior: normalize paths so tests are robust on Windows and Unix
@@ -529,6 +532,7 @@ describe("addCommand", () => {
       return false;
     });
     vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ orchestrator: { model: "test/model" } }));
+    vi.mocked(readBundledAsset).mockReturnValue(null);
 
     await runAdd("/path/to/preset.json", { scope: "user" });
 
