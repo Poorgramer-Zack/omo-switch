@@ -5,14 +5,21 @@ import * as fs from "fs";
 import * as path from "path";
 import JSON5 from "json5";
 import { select } from "@inquirer/prompts";
-import { StoreManager, ProjectStoreManager, Scope, Profile, OmosConfigManager, SettingsManager, OmosPresetConfig } from "../store";
+import { StoreManager, ProjectStoreManager, Scope, Profile, OmosConfigManager, SettingsManager, OmosPresetConfig, OmosConfig } from "../store";
 import { Validator } from "../utils/validator";
 import { OmosValidator } from "../utils/omos-validator";
-import { downloadFile, readBundledAsset } from "../utils/downloader";
+import { readBundledAsset } from "../utils/downloader";
 import { resolveProjectRoot, findProjectRoot } from "../utils/scope-resolver";
 
-const OMO_SCHEMA_URL = "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json";
-
+/**
+ * Ensure the OMO (oh-my-opencode) JSON schema is present in the local cache and return its file path.
+ *
+ * If the schema is already cached this returns the cached path. If not cached but a bundled schema asset
+ * is available, the bundled schema is written to the cache and its path is returned.
+ *
+ * @returns The absolute path to the cached `oh-my-opencode.schema.json` file.
+ * @throws Error if the schema is not cached and no bundled fallback is available.
+ */
 async function ensureOmoSchemaAvailable(store: StoreManager): Promise<string> {
   const schemaPath = path.join(store.getCacheSchemaPath(), "oh-my-opencode.schema.json");
 
@@ -20,24 +27,25 @@ async function ensureOmoSchemaAvailable(store: StoreManager): Promise<string> {
     return schemaPath;
   }
 
-  try {
-    await downloadFile(
-      OMO_SCHEMA_URL,
-      store.getCacheSchemaPath(),
-      "oh-my-opencode.schema.json",
-      { source: "github" }
-    );
+  // Schema not in cache - try bundled fallback
+  const bundledSchema = readBundledAsset("oh-my-opencode.schema.json");
+  if (bundledSchema) {
+    store.saveCacheFile(store.getCacheSchemaPath(), "oh-my-opencode.schema.json", bundledSchema, { source: "bundled" });
     return schemaPath;
-  } catch {
-    const bundledSchema = readBundledAsset("oh-my-opencode.schema.json");
-    if (bundledSchema) {
-      store.saveCacheFile(store.getCacheSchemaPath(), "oh-my-opencode.schema.json", bundledSchema, { source: "bundled" });
-      return schemaPath;
-    }
-    throw new Error("Failed to download or find bundled schema");
   }
+
+  throw new Error(
+    "Schema not found in cache. Run 'omo-switch init' or 'omo-switch schema refresh' to download the schema first."
+  );
 }
 
+/**
+ * Ensures the slim Oh-My-Opencode JSON schema is available in the store cache, saving a bundled fallback if present.
+ *
+ * @param store - Store manager used to resolve cache paths and persist the schema file.
+ * @returns The absolute path to the slim schema file in the store cache.
+ * @throws Error if the schema is not found in the cache and no bundled fallback is available; suggests running 'omo-switch init' or 'omo-switch schema refresh'.
+ */
 async function ensureOmosSchemaAvailable(store: StoreManager): Promise<string> {
   const schemaPath = path.join(store.getCacheSchemaPath(), "oh-my-opencode-slim.schema.json");
 
@@ -45,16 +53,24 @@ async function ensureOmosSchemaAvailable(store: StoreManager): Promise<string> {
     return schemaPath;
   }
 
-  // For OMOS, we use the bundled schema directly (no remote URL currently)
+  // Schema not in cache - try bundled fallback
   const bundledSchema = readBundledAsset("oh-my-opencode-slim.schema.json");
   if (bundledSchema) {
     store.saveCacheFile(store.getCacheSchemaPath(), "oh-my-opencode-slim.schema.json", bundledSchema, { source: "bundled" });
     return schemaPath;
   }
 
-  throw new Error("OMOS schema not found in bundled assets");
+  throw new Error(
+    "Slim schema not found in cache. Run 'omo-switch init' or 'omo-switch schema refresh' to download the schema first."
+  );
 }
 
+/**
+ * Create a URL-friendly identifier from an arbitrary name.
+ *
+ * @param name - The source name to convert into an identifier
+ * @returns A lowercase identifier containing only letters, digits, and single hyphens (no leading or trailing hyphens), truncated to at most 50 characters
+ */
 function deriveIdFromName(name: string): string {
   return name
     .toLowerCase()
@@ -71,7 +87,19 @@ interface AddOptions {
 }
 
 /**
- * Handle adding a preset in OMOS mode
+ * Add and validate an OMOS preset file into the selected scope (user or project).
+ *
+ * Reads and parses a `.json` preset file, validates it against the OMOS schema, optionally prompts
+ * for the target scope, creates a backup of existing configuration, and then adds or updates the
+ * preset in the chosen store.
+ *
+ * This function will terminate the process with a non-zero exit code on fatal errors such as a
+ * missing file, invalid extension, JSON parse errors, schema validation failures, an invalid scope,
+ * or an attempt to overwrite an existing preset without `--force`.
+ *
+ * @param file - Path to the preset `.json` file to import
+ * @param options - AddOptions controlling id/name/force/scope overrides
+ * @param spinner - Ora spinner instance used to display progress and status
  */
 async function handleOmosAdd(
   file: string,
@@ -110,7 +138,7 @@ async function handleOmosAdd(
   spinner.text = "Validating preset configuration...";
   const schemaPath = await ensureOmosSchemaAvailable(globalStore);
   const validator = new OmosValidator(schemaPath);
-  const validation = validator.validatePreset(presetConfig);
+  const validation = validator.validate(presetConfig as OmosConfig);
 
   if (!validation.valid) {
     spinner.fail("Preset validation failed");

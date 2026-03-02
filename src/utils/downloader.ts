@@ -3,6 +3,16 @@ import * as http from "http";
 import * as fs from "fs";
 import * as path from "path";
 
+/**
+ * Download the resource at `url`, write it to `cacheDir/fileName`, and write metadata to `cacheDir/meta.json`.
+ *
+ * @param url - The HTTP(S) URL to download.
+ * @param cacheDir - Directory where the downloaded file and `meta.json` will be written.
+ * @param fileName - Filename to use for the downloaded content.
+ * @param meta - Additional properties to include in `meta.json`; an `updatedAt` timestamp is added automatically.
+ * @returns `true` if the file and metadata were written successfully.
+ * @throws Error when the HTTP response status is not 200, when the request fails, or when writing files fails.
+ */
 export async function downloadFile(url: string, cacheDir: string, fileName: string, meta: Record<string, unknown> = {}): Promise<boolean> {
   const filePath = path.join(cacheDir, fileName);
   const metaPath = path.join(cacheDir, "meta.json");
@@ -34,8 +44,14 @@ export async function downloadFile(url: string, cacheDir: string, fileName: stri
   });
 }
 
+/**
+ * Load a bundled asset from the project's shared assets directory.
+ *
+ * @param relativePath - File path relative to the `shared/assets` directory
+ * @returns The file contents as a UTF-8 string if the asset exists, `null` otherwise
+ */
 export function readBundledAsset(relativePath: string): string | null {
-  const projectRoot = path.resolve(__dirname, "../../../");
+  const projectRoot = path.resolve(__dirname, "../../");
   const assetPath = path.join(projectRoot, "shared", "assets", relativePath);
   if (!fs.existsSync(assetPath)) {
     return null;
