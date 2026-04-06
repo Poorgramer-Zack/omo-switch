@@ -222,7 +222,7 @@ function handleOmoShow(
     let globalConfigPath = "";
     let projectConfigPath = "";
 
-    // Get global TARGET config from ~/.config/opencode/oh-my-opencode.jsonc (or .json)
+    // Get global TARGET config from ~/.config/opencode/oh-my-openagent.jsonc (or .json)
     const globalTargetResult = findExistingConfigPath();
     if (globalTargetResult && globalTargetResult.exists) {
       globalConfigPath = globalTargetResult.path;

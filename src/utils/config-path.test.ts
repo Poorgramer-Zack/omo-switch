@@ -32,8 +32,8 @@ describe("config-path", () => {
       process.env.USERPROFILE = "C:/Users/test";
       process.env.APPDATA = "C:/Users/test/AppData/Roaming";
 
-      const preferredJsonc = join(process.env.USERPROFILE, ".config", "opencode", "oh-my-opencode.jsonc");
-      const preferredJson = join(process.env.USERPROFILE, ".config", "opencode", "oh-my-opencode.json");
+      const preferredJsonc = join(process.env.USERPROFILE, ".config", "opencode", "oh-my-openagent.jsonc");
+      const preferredJson = join(process.env.USERPROFILE, ".config", "opencode", "oh-my-openagent.json");
 
       vi.mocked(fs.existsSync).mockImplementation((p) => p === preferredJsonc || p === preferredJson);
 
@@ -64,7 +64,7 @@ describe("config-path", () => {
       process.env.USERPROFILE = "C:/Users/test";
       process.env.APPDATA = "C:/Users/test/AppData/Roaming";
 
-      const preferredPath = join(process.env.USERPROFILE, ".config", "opencode", "oh-my-opencode.json");
+      const preferredPath = join(process.env.USERPROFILE, ".config", "opencode", "oh-my-openagent.json");
       vi.mocked(fs.existsSync).mockImplementation((p) => p === preferredPath);
 
       expect(getConfigTargetPath()).toEqual({ path: preferredPath, isPreferred: true });
@@ -79,7 +79,7 @@ describe("config-path", () => {
 
     it("findExistingConfigPath uses XDG_CONFIG_HOME when set", () => {
       process.env.XDG_CONFIG_HOME = "/xdg";
-      const jsoncPath = join("/xdg", "opencode", "oh-my-opencode.jsonc");
+      const jsoncPath = join("/xdg", "opencode", "oh-my-openagent.jsonc");
       vi.mocked(fs.existsSync).mockImplementation((p) => p === jsoncPath);
 
       expect(findExistingConfigPath()).toEqual({ path: jsoncPath, exists: true });

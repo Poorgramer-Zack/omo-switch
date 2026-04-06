@@ -133,7 +133,7 @@ export const initCommand = new Command("init")
           // Apply default profile to target config
           spinner.text = "Applying default profile...";
           const targetDir = getConfigTargetDir();
-          const targetPath = path.join(targetDir.dir, "oh-my-opencode.jsonc");
+          const targetPath = path.join(targetDir.dir, "oh-my-openagent.jsonc");
           ensureConfigDir(targetPath);
           
           const headerComment = `// Profile Name: ${profile.name}, edited by omo-switch`;

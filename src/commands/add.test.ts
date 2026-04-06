@@ -123,7 +123,7 @@ vi.mock("../store", () => {
         }
         saveRc() {}
         getTargetPath() {
-          return "/project/.opencode/oh-my-opencode.jsonc";
+          return "/project/.opencode/oh-my-openagent.jsonc";
         }
         listProfiles() {
           return [];

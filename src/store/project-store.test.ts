@@ -13,7 +13,7 @@ vi.mock("fs", () => ({
 
 vi.mock("../utils/scope-resolver", () => ({
   getProjectConfigsPath: vi.fn((root: string) => `${root}/.opencode/omo-configs`),
-  getProjectTargetPath: vi.fn((root: string) => `${root}/.opencode/oh-my-opencode.jsonc`),
+  getProjectTargetPath: vi.fn((root: string) => `${root}/.opencode/oh-my-openagent.jsonc`),
   getProjectRcPath: vi.fn((root: string) => `${root}/.opencode/.omorc`),
   loadProjectRc: vi.fn(() => null),
   saveProjectRc: vi.fn(),
@@ -39,7 +39,7 @@ describe("ProjectStoreManager", () => {
       expect(store.getConfigsPath()).toContain(".opencode");
       expect(store.getConfigsPath()).toContain("omo-configs");
       expect(store.getTargetPath()).toContain(".opencode");
-      expect(store.getTargetPath()).toContain("oh-my-opencode");
+      expect(store.getTargetPath()).toContain("oh-my-openagent");
       expect(store.getTargetPath()).toContain(".jsonc");
       expect(store.getRcPath()).toContain(".opencode");
       expect(store.getRcPath()).toContain(".omorc");
@@ -191,19 +191,19 @@ describe("ProjectStoreManager", () => {
       vi.mocked(fs.existsSync).mockImplementation((p) => {
         const pStr = String(p);
         // Source file exists
-        if (pStr.endsWith("oh-my-opencode.json")) return true;
+        if (pStr.endsWith("oh-my-openagent.json")) return true;
         // Backups dir does NOT exist (so mkdirSync should be called)
         return false;
       });
 
-      const backupPath = store.createBackup("/test/oh-my-opencode.json");
+      const backupPath = store.createBackup("/test/oh-my-openagent.json");
 
       expect(fs.mkdirSync).toHaveBeenCalledWith(
         expect.stringMatching(/backups/),
         { recursive: true }
       );
       expect(backupPath).toBeTruthy();
-      expect(path.normalize(backupPath!)).toContain("oh-my-opencode.json");
+      expect(path.normalize(backupPath!)).toContain("oh-my-openagent.json");
       const copyCall = vi.mocked(fs.copyFileSync).mock.calls[0];
       expect(copyCall).toBeTruthy();
     });

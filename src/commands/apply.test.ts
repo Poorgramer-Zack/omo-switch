@@ -51,6 +51,7 @@ vi.mock("../utils/downloader", () => ({
 vi.mock("../utils/config-path", () => ({
   getConfigTargetDir: vi.fn(),
   ensureConfigDir: vi.fn(),
+  ALL_CONFIG_FILES: ["oh-my-openagent.jsonc", "oh-my-openagent.json", "oh-my-opencode.jsonc", "oh-my-opencode.json"],
 }));
 
 vi.mock("../utils/scope-resolver", async () => {
@@ -109,7 +110,7 @@ describe("applyCommand", () => {
      vi.spyOn(ProjectStoreManager.prototype, "ensureDirectories");
      vi.spyOn(ProjectStoreManager.prototype, "getProfileConfigRaw").mockReturnValue(null);
      vi.spyOn(ProjectStoreManager.prototype, "listProfiles").mockReturnValue([]);
-     vi.spyOn(ProjectStoreManager.prototype, "getTargetPath").mockReturnValue("/project/.opencode/oh-my-opencode.jsonc");
+     vi.spyOn(ProjectStoreManager.prototype, "getTargetPath").mockReturnValue("/project/.opencode/oh-my-openagent.jsonc");
      vi.spyOn(ProjectStoreManager.prototype, "createBackup").mockReturnValue("/project/.opencode/backups/backup.json");
      vi.spyOn(ProjectStoreManager.prototype, "saveRc");
 
@@ -237,7 +238,7 @@ describe("applyCommand", () => {
      vi.mocked(fs.existsSync).mockImplementation((path: string) => {
        if (typeof path === "string") {
          if (path.includes("oh-my-opencode.schema.json")) return true;
-         if (path.includes("oh-my-opencode.jsonc")) return true;
+         if (path.includes("oh-my-openagent.jsonc")) return true;
        }
        return false;
      });
@@ -260,7 +261,7 @@ describe("applyCommand", () => {
      });
      vi.spyOn(ProjectStoreManager.prototype, "ensureDirectories");
      vi.spyOn(ProjectStoreManager.prototype, "saveRc");
-     vi.spyOn(ProjectStoreManager.prototype, "getTargetPath").mockReturnValue("/project/.opencode/oh-my-opencode.jsonc");
+     vi.spyOn(ProjectStoreManager.prototype, "getTargetPath").mockReturnValue("/project/.opencode/oh-my-openagent.jsonc");
      vi.spyOn(ProjectStoreManager.prototype, "createBackup").mockReturnValue("/project/.opencode/backups/backup.json");
      vi.mocked(fs.existsSync).mockImplementation((path: string) => {
        if (typeof path === "string") {
@@ -304,7 +305,7 @@ describe("applyCommand", () => {
      });
      vi.spyOn(ProjectStoreManager.prototype, "ensureDirectories");
      vi.spyOn(ProjectStoreManager.prototype, "saveRc");
-     vi.spyOn(ProjectStoreManager.prototype, "getTargetPath").mockReturnValue("/project/.opencode/oh-my-opencode.jsonc");
+     vi.spyOn(ProjectStoreManager.prototype, "getTargetPath").mockReturnValue("/project/.opencode/oh-my-openagent.jsonc");
      vi.spyOn(ProjectStoreManager.prototype, "createBackup").mockReturnValue("/project/.opencode/backups/backup.json");
      vi.mocked(fs.existsSync).mockImplementation((path: string) => {
        if (typeof path === "string") {
