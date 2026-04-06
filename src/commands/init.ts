@@ -6,6 +6,7 @@ import { StoreManager, SettingsManager, OmosConfigManager } from "../store";
 import { downloadFile, readBundledAsset } from "../utils/downloader";
 import { findExistingConfigPath, getConfigTargetDir, ensureConfigDir } from "../utils/config-path";
 import { getOmosConfigTargetPath } from "../utils/omos-config-path";
+import { resolveProjectRoot, NEW_AGENT_CONFIG_FILE } from "../utils/scope-resolver";
 import * as fs from "fs";
 
 const SCHEMA_URL = "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json";
