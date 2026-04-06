@@ -17,9 +17,7 @@ function findConfigInDir(dir: string): { path: string; exists: boolean } | null 
 }
 
 export function findExistingConfigPath(): { path: string; exists: boolean } | null {
-  const isWindows = os.platform() === "win32";
-
-  if (isWindows) {
+  if (os.platform() === "win32") {
     const userProfile = process.env.USERPROFILE || os.homedir();
     const appData = process.env.APPDATA || path.join(userProfile, "AppData", "Roaming");
 
@@ -45,9 +43,7 @@ export function findExistingConfigPath(): { path: string; exists: boolean } | nu
 }
 
 export function getConfigTargetDir(): { dir: string; isPreferred: boolean } {
-  const isWindows = os.platform() === "win32";
-
-  if (isWindows) {
+  if (os.platform() === "win32") {
     const userProfile = process.env.USERPROFILE || os.homedir();
     const appData = process.env.APPDATA || path.join(userProfile, "AppData", "Roaming");
 
@@ -73,13 +69,9 @@ export function getConfigTargetPath(): { path: string; isPreferred: boolean } {
     return { path: existingConfig.path, isPreferred: true };
   }
 
-  const isWindows = os.platform() === "win32";
-
-  if (isWindows) {
+  if (os.platform() === "win32") {
     const userProfile = process.env.USERPROFILE || os.homedir();
-
     const preferredPath = path.join(userProfile, ".config", "opencode", "oh-my-openagent.json");
-
     return { path: preferredPath, isPreferred: true };
   }
 
