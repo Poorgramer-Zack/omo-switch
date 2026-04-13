@@ -6,6 +6,7 @@ import { StoreManager, SettingsManager, OmosConfigManager } from "../store";
 import { downloadFile, readBundledAsset } from "../utils/downloader";
 import { findExistingConfigPath, getConfigTargetDir, ensureConfigDir } from "../utils/config-path";
 import { getOmosConfigTargetPath } from "../utils/omos-config-path";
+import { resolveProjectRoot, NEW_AGENT_CONFIG_FILE } from "../utils/scope-resolver";
 import * as fs from "fs";
 
 const SCHEMA_URL = "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json";
@@ -133,7 +134,7 @@ export const initCommand = new Command("init")
           // Apply default profile to target config
           spinner.text = "Applying default profile...";
           const targetDir = getConfigTargetDir();
-          const targetPath = path.join(targetDir.dir, "oh-my-opencode.jsonc");
+          const targetPath = path.join(targetDir.dir, "oh-my-openagent.jsonc");
           ensureConfigDir(targetPath);
           
           const headerComment = `// Profile Name: ${profile.name}, edited by omo-switch`;

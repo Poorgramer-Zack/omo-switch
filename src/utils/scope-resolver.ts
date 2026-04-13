@@ -4,8 +4,15 @@ import { ProjectRc } from "../store/types";
 
 const OPENCODE_DIR = ".opencode";
 const OMO_CONFIGS_DIR = "omo-configs";
-const TARGET_CONFIG_FILE = "oh-my-opencode.jsonc";
 const PROJECT_RC_FILE = ".omorc";
+
+export const NEW_AGENT_CONFIG_FILE = "oh-my-openagent.jsonc";
+export const ALL_PROJECT_CONFIG_FILES = [
+  "oh-my-openagent.jsonc",
+  "oh-my-openagent.json",
+  "oh-my-opencode.jsonc",
+  "oh-my-opencode.json",
+] as const;
 
 /**
  * Traverse UP from startDir looking for .opencode/ directory.
@@ -48,10 +55,10 @@ export function getProjectConfigsPath(projectRoot: string): string {
 }
 
 /**
- * Returns <projectRoot>/.opencode/oh-my-opencode.jsonc
+ * Returns <projectRoot>/.opencode/oh-my-openagent.jsonc (default write target)
  */
 export function getProjectTargetPath(projectRoot: string): string {
-  return path.join(projectRoot, OPENCODE_DIR, TARGET_CONFIG_FILE);
+  return path.join(projectRoot, OPENCODE_DIR, NEW_AGENT_CONFIG_FILE);
 }
 
 /**

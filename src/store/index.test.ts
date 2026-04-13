@@ -162,10 +162,10 @@ describe("StoreManager", () => {
       vi.mocked(fs.existsSync).mockReturnValue(true);
       const store = new StoreManager();
 
-      const backupPath = store.createBackup("/test/oh-my-opencode.json");
+      const backupPath = store.createBackup("/test/oh-my-openagent.json");
 
       expect(backupPath).toBeTruthy();
-      expect(backupPath).toContain("oh-my-opencode.json");
+      expect(backupPath).toContain("oh-my-openagent.json");
       expect(fs.copyFileSync).toHaveBeenCalled();
     });
   });

@@ -6,7 +6,7 @@ import * as path from "path";
 import JSON5 from "json5";
 import { StoreManager, ProjectStoreManager, Scope, OmosConfigManager, SettingsManager } from "../store";
 import { Validator } from "../utils/validator";
-import { getConfigTargetDir, ensureConfigDir } from "../utils/config-path";
+import { getConfigTargetDir, ensureConfigDir, ALL_CONFIG_FILES } from "../utils/config-path";
 import { downloadFile, readBundledAsset } from "../utils/downloader";
 import { resolveProjectRoot, findProjectRoot } from "../utils/scope-resolver";
 
@@ -202,22 +202,21 @@ async function handleOmoApply(
     ensureConfigDir(targetPath);
 
     spinner.text = "Creating backup...";
-    backupPath = projectStore.createBackup(targetPath);
+    const existingTarget = projectStore.findExistingTargetConfig();
+    backupPath = existingTarget ? projectStore.createBackup(existingTarget) : null;
   } else {
-    // User scope: always write to .jsonc file
     spinner.text = "Determining target path...";
     const targetDir = getConfigTargetDir();
-    targetPath = path.join(targetDir.dir, "oh-my-opencode.jsonc");
+    targetPath = path.join(targetDir.dir, "oh-my-openagent.jsonc");
     ensureConfigDir(targetPath);
 
-    // Create backup of existing config (could be .json or .jsonc)
     spinner.text = "Creating backup...";
-    const existingJsonc = path.join(targetDir.dir, "oh-my-opencode.jsonc");
-    const existingJson = path.join(targetDir.dir, "oh-my-opencode.json");
-    if (fs.existsSync(existingJsonc)) {
-      backupPath = globalStore.createBackup(existingJsonc);
-    } else if (fs.existsSync(existingJson)) {
-      backupPath = globalStore.createBackup(existingJson);
+    for (const file of ALL_CONFIG_FILES) {
+      const existingPath = path.join(targetDir.dir, file);
+      if (fs.existsSync(existingPath)) {
+        backupPath = globalStore.createBackup(existingPath);
+        break;
+      }
     }
   }
 

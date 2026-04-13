@@ -93,7 +93,7 @@ omo-switch type
 # Set global type to SLIM (uses oh-my-opencode-slim.json)
 omo-switch type slim
 
-# Set global type to OMO (uses oh-my-opencode.jsonc)
+# Set global type to OMO (uses oh-my-openagent.jsonc)
 omo-switch type omo
 
 # Set project-specific type override (creates .opencode/settings.json)
@@ -330,8 +330,8 @@ omo-switch schema refresh --offline
 
 | Scope | Storage Location | Target Config Path | Use Case |
 |-------|------------------|-------------------|----------|
-| `user` | `~/.config/omo-switch/` | `~/.config/opencode/oh-my-opencode.jsonc` (OMO) / `~/.config/opencode/oh-my-opencode-slim.json` (OMOS) | Global profiles/presets shared across all projects |
-| `project` | `<project>/.opencode/` | `<project>/.opencode/oh-my-opencode.jsonc` (OMO) / `<project>/.opencode/oh-my-opencode-slim.json` (OMOS) | Project-specific profiles/presets, ideal for team sharing via Git |
+| `user` | `~/.config/omo-switch/` | `~/.config/opencode/oh-my-openagent.jsonc` (OMO) / `~/.config/opencode/oh-my-opencode-slim.json` (OMOS) | Global profiles/presets shared across all projects |
+| `project` | `<project>/.opencode/` | `<project>/.opencode/oh-my-openagent.jsonc` (OMO) / `<project>/.opencode/oh-my-opencode-slim.json` (OMOS) | Project-specific profiles/presets, ideal for team sharing via Git |
 
 
 ## Storage Structure
@@ -353,7 +353,7 @@ omo-switch schema refresh --offline
 <project>/.opencode/
 ├── .omorc               # Project-specific active profile (OMO)
 ├── omo-configs/         # Project-specific profiles (OMO)
-├── oh-my-opencode.jsonc # Applied project config (target) (OMO)
+├── oh-my-openagent.jsonc # Applied project config (target) (OMO)
 └── oh-my-opencode-slim.json # Applied project config (target) (OMOS)
 ```
 
@@ -363,9 +363,9 @@ When applying a profile, `omo-switch` writes to:
 
 | Scope | Platform | Primary Path | Fallback Path |
 |-------|----------|--------------|---------------|
-| `user` | Windows | `%USERPROFILE%\.config\opencode\oh-my-opencode.jsonc` (OMO) / `%USERPROFILE%\.config\opencode\oh-my-opencode-slim.json` (OMOS) | `%APPDATA%\opencode\oh-my-opencode.json` |
-| `user` | Linux/macOS | `$XDG_CONFIG_HOME/opencode/oh-my-opencode.jsonc` (OMO) / `$XDG_CONFIG_HOME/opencode/oh-my-opencode-slim.json` (OMOS) | `~/.config/opencode/oh-my-opencode.jsonc` |
-| `project` | All | `<project>/.opencode/oh-my-opencode.jsonc` (OMO) / `<project>/.opencode/oh-my-opencode-slim.json` (OMOS) | - |
+| `user` | Windows | `%USERPROFILE%\.config\opencode\oh-my-openagent.jsonc` (OMO) / `%USERPROFILE%\.config\opencode\oh-my-opencode-slim.json` (OMOS) | `%APPDATA%\opencode\oh-my-opencode.json` |
+| `user` | Linux/macOS | `$XDG_CONFIG_HOME/opencode/oh-my-openagent.jsonc` (OMO) / `$XDG_CONFIG_HOME/opencode/oh-my-opencode-slim.json` (OMOS) | `~/.config/opencode/oh-my-openagent.jsonc` |
+| `project` | All | `<project>/.opencode/oh-my-openagent.jsonc` (OMO) / `<project>/.opencode/oh-my-opencode-slim.json` (OMOS) | - |
 
 ## Local Development
 
@@ -449,8 +449,8 @@ Ensure your terminal has write permissions to:
 ### Finding Backups
 
 If something goes wrong, find your original configuration in:
-- **Global**: `~/.config/omo-switch/backups/<ISO_TIMESTAMP>__oh-my-opencode.jsonc`
-- **Project**: `<project>/.opencode/backups/<ISO_TIMESTAMP>__oh-my-opencode.jsonc`
+- **Global**: `~/.config/omo-switch/backups/<ISO_TIMESTAMP>__oh-my-openagent.jsonc`
+- **Project**: `<project>/.opencode/backups/<ISO_TIMESTAMP>__oh-my-openagent.jsonc`
 
 ### Backup Retention Policy
 

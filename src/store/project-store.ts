@@ -10,6 +10,7 @@ import {
   loadProjectRc,
   saveProjectRc,
   ensureProjectDirs,
+  ALL_PROJECT_CONFIG_FILES,
 } from "../utils/scope-resolver";
 
 const OPENCODE_DIR = ".opencode";
@@ -40,6 +41,17 @@ export class ProjectStoreManager {
 
   getTargetPath(): string {
     return this.targetPath;
+  }
+
+  findExistingTargetConfig(): string | null {
+    const opencodeDir = path.join(this.projectRoot, OPENCODE_DIR);
+    for (const file of ALL_PROJECT_CONFIG_FILES) {
+      const configPath = path.join(opencodeDir, file);
+      if (fs.existsSync(configPath)) {
+        return configPath;
+      }
+    }
+    return null;
   }
 
   getRcPath(): string {

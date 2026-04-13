@@ -90,7 +90,7 @@ describe("scope-resolver", () => {
       expect(configsPath).toContain(".opencode");
       expect(configsPath).toContain("omo-configs");
       expect(targetPath).toContain(".opencode");
-      expect(targetPath).toContain("oh-my-opencode");
+      expect(targetPath).toContain("oh-my-openagent");
       expect(targetPath).toContain("jsonc");
       expect(rcPath).toContain(".opencode");
       expect(rcPath).toContain(".omorc");
