@@ -182,10 +182,10 @@ jobs:
                   fi
 
             # Publish using OIDC (Trusted Publishers)
-            # No NPM_TOKEN needed - authentication via id-token: write permission
+            # Use npx to run npm@11 directly, avoiding global install issues in CI
             - name: Publish to npm (Trusted Publishers)
               if: steps.check-npm-version.outputs.exists == 'false'
-              run: npm publish --access public
+              run: npx npm@11 publish --access public
 
             - name: Skip publishing (version exists)
               if: steps.check-npm-version.outputs.exists == 'true'
